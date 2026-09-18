@@ -28,6 +28,7 @@ on:
           - android14-6.1
           - android13-5.15
           - android12-5.10
+          - OP11r
         default: A14+15+16
       ksu_options:
         description: 'Enter KernelSU build json'
@@ -153,6 +154,9 @@ jobs:
               ;;
             A14)
               jq_filter="map(select(.os_version == \"A14\"))"
+              ;;
+            OP11r)
+              jq_filter="map(select(.model == \"OP11r\"))"
               ;;
             android*-*.*)
               # Extract android version and kernel version
