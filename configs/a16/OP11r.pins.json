@@ -16,6 +16,6 @@
     "branch": "aug11",
     "sha": "f569cc9e69d6f03a488c391db4cc00db8ead7a59"
   },
-  "drivers": "stock OP11r.jsonRow: ds/opt/bbg/bbr/bbr3/ttl/ip_set/unicode/ntsync true, default blacklist_modules, lto thin, uname OP-WILD",
+  "drivers": "stock OP11r.json row: ds/opt/bbg/bbr/bbr3/ttl/ip_set/unicode/ntsync true, default blacklist_modules, lto thin, uname OP-WILD",
   "proven_green_run": "to be filled by release rebuild"
 }
