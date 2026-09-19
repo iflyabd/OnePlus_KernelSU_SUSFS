@@ -1108,8 +1108,10 @@ runs:
               patch -p1 --forward < "$KERNEL_PATCHES_FOLDER/next/susfs_fix_patches/$susfs_version/overwrite_hook_mode.patch"
               echo "Patching KSU_TOOLKIT Support for SusFS kernel!"
               patch -p1 --forward < "$KERNEL_PATCHES_FOLDER/next/susfs_fix_patches/$susfs_version/ksu_toolkit.patch"
-              echo "Patching is_first_zygote definition (fork: v2.2.0 provides no define for fix_sucompat)!"
-              patch -p1 --forward < "$GITHUB_WORKSPACE/patches/is_first_zygote_define.patch" || true
+              echo "Providing is_first_zygote definition (fork: v2.2.0 provides none for fix_sucompat)!"
+              if ! grep -q "DEFINE_STATIC_KEY_TRUE(is_first_zygote)" kernel/feature/sucompat.c; then
+                printf '\n/* NoWiFi fork: v2.2.0 provides no definition for the is_first_zygote key used by fix_sucompat. */\nDEFINE_STATIC_KEY_TRUE(is_first_zygote);\n' >> kernel/feature/sucompat.c
+              fi
             else
               cd "$KSU_FOLDER"
               patch -p1 --forward < "$SUSFS_FOLDER/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch" || true
