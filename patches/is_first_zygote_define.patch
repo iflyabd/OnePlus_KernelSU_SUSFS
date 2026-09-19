@@ -1,0 +1,18 @@
+--- a/kernel/runtime/ksud_integration.c
++++ b/kernel/runtime/ksud_integration.c
+@@ -28,6 +28,7 @@
+ #include "hook/syscall_hook.h"
+ #include "hook/syscall_event_bridge.h"
++#include <linux/jump_label.h>
+ 
+ // clang-format off
+ static const char KERNEL_SU_RC[] =
+@@ -60,6 +61,9 @@ static struct work_struct stop_input_hook_work;
+ 
+ #define MAX_ARG_STRINGS 0x7FFFFFFF
++
++/* NoWiFi fork: provide is_first_zygote for Wild fix_sucompat (SUSFS v2.2.0 world has no definition). */
++DEFINE_STATIC_KEY_TRUE(is_first_zygote);
+ struct user_arg_ptr {
+ #ifdef CONFIG_COMPAT
+     bool is_compat;
