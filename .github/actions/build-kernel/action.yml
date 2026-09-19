@@ -1895,18 +1895,26 @@ runs:
       shell: bash
       run: |
         set -euo pipefail
-        if [ "${OP_MODEL:-}" != "OP11r" ]; then
-          echo "Skipping dongle drivers (not OP11r)."
-          exit 0
-        fi
-        echo "Layering in-tree USB dongle drivers: MT7601U WiFi + BT_USB (Barrot BT)"
-        cat >> "$COMMON_KERNEL_FOLDER/arch/arm64/configs/gki_defconfig" <<EOF
+        # NOTE: the blacklist tail below (KERNEL_VERSION check + patch) originally
+        # ran inside the previous step with cwd=$COMMON_KERNEL_FOLDER.
+        # This step absorbed it, so restore cwd explicitly at the end.
+        if [ "${OP_MODEL:-}" = "OP11r" ]; then
+          echo "Layering in-tree USB dongle drivers: MT7601U WiFi + BT_USB (Barrot BT)"
+          cat >> "$COMMON_KERNEL_FOLDER/arch/arm64/configs/gki_defconfig" <<EOF
         CONFIG_MAC80211=m
         CONFIG_CFG80211=m
         CONFIG_MT7601U=m
         CONFIG_BT=m
         CONFIG_BT_USB=m
         EOF
+        else
+          echo "Skipping dongle drivers (not OP11r)."
+        fi
+
+        # NOTE: the blacklist tail below (KERNEL_VERSION check + patch) originally
+        # ran inside the previous step with cwd=$COMMON_KERNEL_FOLDER.
+        # This step absorbed it, so restore cwd explicitly.
+        cd "$COMMON_KERNEL_FOLDER"
 
         KERNEL_VERSION="${{ env.KERNEL_VER }}"
         MIN_VERSION="5.16"
