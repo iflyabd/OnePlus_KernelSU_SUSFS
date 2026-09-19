@@ -1891,6 +1891,23 @@ runs:
         
         echo "CONFIG_DEBLOAT_VENDOR_MODULES=${RESULT_LIST}" >> "$COMMON_KERNEL_FOLDER/arch/arm64/configs/gki_defconfig"
 
+    - name: Layer USB dongle drivers (OP11r)
+      shell: bash
+      run: |
+        set -euo pipefail
+        if [ "${OP_MODEL:-}" != "OP11r" ]; then
+          echo "Skipping dongle drivers (not OP11r)."
+          exit 0
+        fi
+        echo "Layering in-tree USB dongle drivers: MT7601U WiFi + BT_USB (Barrot BT)"
+        cat >> "$COMMON_KERNEL_FOLDER/arch/arm64/configs/gki_defconfig" <<EOF
+        CONFIG_MAC80211=m
+        CONFIG_CFG80211=m
+        CONFIG_MT7601U=m
+        CONFIG_BT=m
+        CONFIG_BT_USB=m
+        EOF
+
         KERNEL_VERSION="${{ env.KERNEL_VER }}"
         MIN_VERSION="5.16"
         if [ "$(printf '%s\n' "$KERNEL_VERSION" "$MIN_VERSION" | sort -V | head -n1)" = "$KERNEL_VERSION" ]; then
@@ -2234,6 +2251,38 @@ runs:
         echo "   - Image size: $(numfmt --to=iec-i --suffix=B "$IMG_SIZE")"
         echo "   - SHA256: $IMG_SHA256"
         echo "   - Build time: ${BUILD_TIME}s"
+        echo "::endgroup::"
+
+    - name: Build RTL88x2BU out-of-tree module (OP11r)
+      shell: bash
+      run: |
+        set -euo pipefail
+        if [ "${OP_MODEL:-}" != "OP11r" ]; then
+          echo "Skipping 88x2BU (not OP11r)."
+          exit 0
+        fi
+        echo "::group::Build RTL8812BU/8822BU USB WiFi module (morrownr)"
+        export LLVM=1 LLVM_IAS=1 ARCH=arm64 SUBARCH=arm64
+        cd "$GITHUB_WORKSPACE"
+        rm -rf rtl88x2bu
+        for i in 1 2 3; do
+          git clone --depth 1 https://github.com/morrownr/88x2bu-20210702.git rtl88x2bu && break
+          echo "clone retry $i"; sleep 10
+        done
+        test -d rtl88x2bu
+        KREL=$(cat "$COMMON_KERNEL_FOLDER/out/include/config/kernel.release")
+        cd rtl88x2bu
+        make -j"$(nproc)" ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- KVER="$KREL" KSRC="$COMMON_KERNEL_FOLDER/out"
+        KO=$(find . -name "88x2bu.ko" | head -n 1)
+        test -n "$KO"
+        echo "Built: $KO"
+        if [ -f "$COMMON_KERNEL_FOLDER/out/certs/signing_key.pem" ]; then
+          "$COMMON_KERNEL_FOLDER/out/scripts/sign-file" sha512 \
+            "$COMMON_KERNEL_FOLDER/out/certs/signing_key.pem" \
+            "$COMMON_KERNEL_FOLDER/out/certs/signing_key.x509" "$KO" || true
+        fi
+        mkdir -p "$ARTIFACTS_FOLDER"
+        cp "$KO" "$ARTIFACTS_FOLDER/88x2bu.ko"
         echo "::endgroup::"
 
     - name: Create Kernel ZIP
