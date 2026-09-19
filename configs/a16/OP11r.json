@@ -7,7 +7,7 @@
   "kernel_version": "5.10",
   "os_version": "A16",
   "lto": "thin",
-  "zyc_compiler": "https://github.com/XSans0/WeebX-Clang/releases/download/WeebX-Clang-19.1.5-release/WeebX-Clang-19.1.5.tar.gz",
+  "zyc_compiler": "https://github.com/iflyabd/OnePlus_KernelSU_SUSFS/releases/download/toolchain-cache/weebx-19.1.5.tar.gz",
   "c_compiler": "kernel_platform/prebuilts-master/clang/host/linux-x86/clang-r416183c/bin",
   "rust_compiler": "",
   "bindgen": "",
