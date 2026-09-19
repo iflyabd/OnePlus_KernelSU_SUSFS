@@ -2261,7 +2261,7 @@ runs:
         echo "   - Build time: ${BUILD_TIME}s"
         echo "::endgroup::"
 
-    - name: Build RTL88x2BU out-of-tree module (OP11r)
+    - name: Build RTL88x2BU module + package layered drivers (OP11r)
       shell: bash
       run: |
         set -euo pipefail
@@ -2296,6 +2296,34 @@ runs:
         cp "$KO" "$ARTIFACTS_FOLDER/88x2bu.ko"
         echo "In-tree layered drivers built:"
         find "$COMMON_KERNEL_FOLDER/out" -name "mt7601u.ko" -o -name "btusb.ko" 2>/dev/null | head -n 5
+        echo "Packaging layered .ko files into AnyKernel3 zip (extra-modules/, manual insmod)..."
+        MODDIR="$AK3_FOLDER/extra-modules"
+        mkdir -p "$MODDIR"
+        for mod in mt7601u mac80211 cfg80211 btusb bluetooth rfkill; do
+          found=$(find "$COMMON_KERNEL_FOLDER/out" -name "${mod}.ko" 2>/dev/null | head -n 1)
+          if [ -n "$found" ]; then
+            cp "$found" "$MODDIR/"
+            echo "packaged: $mod.ko"
+          else
+            echo "not built as module (builtin or absent): $mod"
+          fi
+        done
+        cp "$KO" "$MODDIR/88x2bu.ko"
+        if [ -f "$COMMON_KERNEL_FOLDER/out/certs/signing_key.pem" ]; then
+          for k in "$MODDIR"/*.ko; do
+            "$COMMON_KERNEL_FOLDER/out/scripts/sign-file" sha512 \
+              "$COMMON_KERNEL_FOLDER/out/certs/signing_key.pem" \
+              "$COMMON_KERNEL_FOLDER/out/certs/signing_key.x509" "$k" || true
+          done
+        fi
+        cat > "$MODDIR/README-install.txt" <<'MODEOF'
+        Layered USB dongle drivers (OP11r Wild build).
+        Manual install as root (no auto-load; do.modules stays 0):
+          insmod cfg80211.ko; insmod mac80211.ko; insmod mt7601u.ko   # MT7601U WiFi (+ mt7601u.bin firmware)
+          insmod rfkill.ko; insmod bluetooth.ko; insmod btusb.ko      # Barrot BT (+ rtl8761b_fw.bin firmware)
+          insmod cfg80211.ko; insmod 88x2bu.ko                        # RTL88x2BU WiFi
+        Firmware (*.bin) is NOT included: push vendor firmware files first.
+MODEOF
         echo "::endgroup::"
 
     - name: Create Kernel ZIP
