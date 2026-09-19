@@ -2316,14 +2316,14 @@ runs:
               "$COMMON_KERNEL_FOLDER/out/certs/signing_key.x509" "$k" || true
           done
         fi
-        cat > "$MODDIR/README-install.txt" <<'MODEOF'
-        Layered USB dongle drivers (OP11r Wild build).
-        Manual install as root (no auto-load; do.modules stays 0):
-          insmod cfg80211.ko; insmod mac80211.ko; insmod mt7601u.ko   # MT7601U WiFi (+ mt7601u.bin firmware)
-          insmod rfkill.ko; insmod bluetooth.ko; insmod btusb.ko      # Barrot BT (+ rtl8761b_fw.bin firmware)
-          insmod cfg80211.ko; insmod 88x2bu.ko                        # RTL88x2BU WiFi
-        Firmware (*.bin) is NOT included: push vendor firmware files first.
-MODEOF
+        printf '%s\n' \
+          "Layered USB dongle drivers (OP11r Wild build)." \
+          "Manual install as root (no auto-load; do.modules stays 0):" \
+          "  insmod cfg80211.ko; insmod mac80211.ko; insmod mt7601u.ko" \
+          "  insmod rfkill.ko; insmod bluetooth.ko; insmod btusb.ko" \
+          "  insmod cfg80211.ko; insmod 88x2bu.ko" \
+          "Firmware (*.bin) is NOT included: push vendor firmware files first." \
+          > "$MODDIR/README-install.txt"
         echo "::endgroup::"
 
     - name: Create Kernel ZIP
