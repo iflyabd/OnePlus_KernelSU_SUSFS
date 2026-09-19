@@ -2280,7 +2280,8 @@ runs:
         test -d rtl88x2bu
         KREL=$(cat "$COMMON_KERNEL_FOLDER/out/include/config/kernel.release")
         cd rtl88x2bu
-        make -j"$(nproc)" ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- KVER="$KREL" KSRC="$COMMON_KERNEL_FOLDER/out"
+        # Clang12 prebuilt rejects newer -Wno-* flags morrownr adds; neutralize those.
+        make -j"$(nproc)" ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- KVER="$KREL" KSRC="$COMMON_KERNEL_FOLDER/out" EXTRA_CFLAGS="-Wno-unknown-warning-option"
         KO=$(find . -name "88x2bu.ko" | head -n 1)
         test -n "$KO"
         echo "Built: $KO"
@@ -2291,6 +2292,8 @@ runs:
         fi
         mkdir -p "$ARTIFACTS_FOLDER"
         cp "$KO" "$ARTIFACTS_FOLDER/88x2bu.ko"
+        echo "In-tree layered drivers built:"
+        find "$COMMON_KERNEL_FOLDER/out" -name "mt7601u.ko" -o -name "btusb.ko" 2>/dev/null | head -n 5
         echo "::endgroup::"
 
     - name: Create Kernel ZIP
