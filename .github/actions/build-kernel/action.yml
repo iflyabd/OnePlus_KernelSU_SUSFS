@@ -2281,7 +2281,8 @@ runs:
         KREL=$(cat "$COMMON_KERNEL_FOLDER/out/include/config/kernel.release")
         cd rtl88x2bu
         # Clang12 prebuilt rejects newer -Wno-* flags morrownr adds; neutralize those.
-        make -j"$(nproc)" ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- KVER="$KREL" KSRC="$COMMON_KERNEL_FOLDER/out" EXTRA_CFLAGS="-Wno-unknown-warning-option"
+        # Vendor code also trips Clang -Werror diagnostics: silence the known ones.
+        make -j"$(nproc)" ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- KVER="$KREL" KSRC="$COMMON_KERNEL_FOLDER/out" EXTRA_CFLAGS="-Wno-unknown-warning-option -Wno-sometimes-uninitialized -Wno-parentheses-equality"
         KO=$(find . -name "88x2bu.ko" | head -n 1)
         test -n "$KO"
         echo "Built: $KO"
