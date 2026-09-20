@@ -1899,13 +1899,13 @@ runs:
         # ran inside the previous step with cwd=$COMMON_KERNEL_FOLDER.
         # This step absorbed it, so restore cwd explicitly at the end.
         if [ "${OP_MODEL:-}" = "OP11r" ]; then
-          echo "Layering in-tree USB dongle drivers: MT7601U WiFi + BT_USB (Barrot BT)"
-          cat >> "$COMMON_KERNEL_FOLDER/arch/arm64/configs/gki_defconfig" <<EOF
+        echo "Layering in-tree USB dongle drivers: MT7601U WiFi + BT_USB (Barrot BT)"
+        cat >> "$COMMON_KERNEL_FOLDER/arch/arm64/configs/gki_defconfig" <<EOF
         CONFIG_MAC80211=m
         CONFIG_CFG80211=m
         CONFIG_MT7601U=m
         CONFIG_BT=m
-        CONFIG_BT_USB=m
+        CONFIG_BT_HCIBTUSB=m
         EOF
         else
           echo "Skipping dongle drivers (not OP11r)."
@@ -2294,8 +2294,10 @@ runs:
         fi
         mkdir -p "$ARTIFACTS_FOLDER"
         cp "$KO" "$ARTIFACTS_FOLDER/88x2bu.ko"
-        echo "In-tree layered drivers built:"
-        find "$COMMON_KERNEL_FOLDER/out" -name "mt7601u.ko" -o -name "btusb.ko" 2>/dev/null | head -n 5
+        echo "Resolved dongle configs in built .config:"
+        for cfg in MT7601U BT_HCIBTUSB BT MAC80211 CFG80211 USB RFKILL; do
+          "$COMMON_KERNEL_FOLDER/scripts/config" --file "$COMMON_KERNEL_FOLDER/out/.config" --state CONFIG_$cfg 2>/dev/null || echo "CONFIG_$cfg unknown"
+        done
         echo "Packaging layered .ko files into AnyKernel3 zip (extra-modules/, manual insmod)..."
         MODDIR="$AK3_FOLDER/extra-modules"
         mkdir -p "$MODDIR"
