@@ -1902,11 +1902,15 @@ runs:
         echo "Layering in-tree USB dongle drivers: MT7601U WiFi + BT_USB (Barrot BT)"
         cat >> "$COMMON_KERNEL_FOLDER/arch/arm64/configs/gki_defconfig" <<EOF
         CONFIG_WLAN=y
+        CONFIG_WLAN_VENDOR_MEDIATEK=y
         CONFIG_MAC80211=m
         CONFIG_CFG80211=m
         CONFIG_MT7601U=m
         CONFIG_BT=m
         CONFIG_BT_HCIBTUSB=m
+        CONFIG_BT_INTEL=m
+        CONFIG_BT_BCM=m
+        CONFIG_BT_RTL=m
         EOF
         echo "Dongle defconfig lines present:"
         grep -E "^(CONFIG_WLAN|CONFIG_MT7601U|CONFIG_BT_HCIBTUSB)=" "$COMMON_KERNEL_FOLDER/arch/arm64/configs/gki_defconfig" | tail -n 6
@@ -2298,13 +2302,13 @@ runs:
         mkdir -p "$ARTIFACTS_FOLDER"
         cp "$KO" "$ARTIFACTS_FOLDER/88x2bu.ko"
         echo "Resolved dongle configs in built .config:"
-        for cfg in MT7601U WLAN BT_HCIBTUSB BT MAC80211 CFG80211 USB RFKILL; do
+        for cfg in MT7601U WLAN WLAN_VENDOR_MEDIATEK BT_HCIBTUSB BT_INTEL BT_BCM BT_RTL BT MAC80211 CFG80211 USB RFKILL; do
           "$COMMON_KERNEL_FOLDER/scripts/config" --file "$COMMON_KERNEL_FOLDER/out/.config" --state CONFIG_$cfg 2>/dev/null || echo "CONFIG_$cfg unknown"
         done
         echo "Packaging layered .ko files into AnyKernel3 zip (extra-modules/, manual insmod)..."
         MODDIR="$AK3_FOLDER/extra-modules"
         mkdir -p "$MODDIR"
-        for mod in mt7601u mac80211 cfg80211 btusb bluetooth rfkill; do
+        for mod in mt7601u mac80211 cfg80211 btusb bluetooth rfkill btintel btbcm btrtl; do
           found=$(find "$COMMON_KERNEL_FOLDER/out" -name "${mod}.ko" 2>/dev/null | head -n 1)
           if [ -n "$found" ]; then
             cp "$found" "$MODDIR/"
@@ -2327,16 +2331,15 @@ runs:
           "  insmod cfg80211.ko; insmod mac80211.ko; insmod mt7601u.ko" \
           "  insmod rfkill.ko; insmod bluetooth.ko; insmod btusb.ko" \
           "  insmod cfg80211.ko; insmod 88x2bu.ko" \
-          "Firmware is in firmware/: mt7601u.bin goes to /vendor/firmware/ (root) first." \
+          "Firmware is in firmware/: mt7601u.bin + intel ibt + rtl8822b BT blobs" \
+          "go to /vendor/firmware/ (root) first." \
           "88x2bu firmware is compiled into 88x2bu.ko (no blob needed)." \
           "Barrot BT needs no blob on CSR dongles, else vendor fw." \
           > "$MODDIR/README-install.txt"
         echo "Fetching dongle firmware (linux-firmware mirror)..."
         FWDIR="$MODDIR/firmware"
-        mkdir -p "$FWDIR"
-        # Only mt7601u needs a separate blob (88x2bu fw is compiled into the
-        # driver; Barrot BT is firmware-less CSR or vendor-supplied).
-        for f in mt7601u.bin; do
+        mkdir -p "$FWDIR/intel" "$FWDIR/rtl_bt"
+        for f in mt7601u.bin intel/ibt-18-0-1.sfi intel/ibt-18-0-1.ddc intel/ibt-18-1.sfi intel/ibt-18-1.ddc intel/ibt-20-0-3.sfi intel/ibt-20-0-3.ddc intel/ibt-20-1-3.sfi intel/ibt-20-1-3.ddc rtl_bt/rtl8822b_fw.bin rtl_bt/rtl8822b_config.bin; do
           if curl -L --fail --retry 3 --retry-delay 5 --connect-timeout 30 -o "$FWDIR/$f" "https://raw.githubusercontent.com/wkennington/linux-firmware/master/$f"; then
             echo "fw ok: $f"
           else
