@@ -1908,6 +1908,8 @@ runs:
         CONFIG_BT=m
         CONFIG_BT_HCIBTUSB=m
         EOF
+        echo "Dongle defconfig lines present:"
+        grep -E "^(CONFIG_WLAN|CONFIG_MT7601U|CONFIG_BT_HCIBTUSB)=" "$COMMON_KERNEL_FOLDER/arch/arm64/configs/gki_defconfig" | tail -n 6
         else
           echo "Skipping dongle drivers (not OP11r)."
         fi
