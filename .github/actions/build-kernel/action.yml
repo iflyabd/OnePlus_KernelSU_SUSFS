@@ -2307,13 +2307,13 @@ runs:
         mkdir -p "$ARTIFACTS_FOLDER"
         cp "$KO" "$ARTIFACTS_FOLDER/88x2bu.ko"
         echo "Resolved dongle configs in built .config:"
-        for cfg in MT7601U WLAN WLAN_VENDOR_MEDIATEK BT_HCIBTUSB BT_INTEL BT_BCM BT_RTL BT MAC80211 CFG80211 USB RFKILL; do
+        for cfg in MT7601U WLAN WLAN_VENDOR_MEDIATEK BT_HCIBTUSB BT_INTEL BT_BCM BT_RTL BT MAC80211 CFG80211 USB RFKILL CRYPTO_ECDH CRYPTO_CMAC; do
           "$COMMON_KERNEL_FOLDER/scripts/config" --file "$COMMON_KERNEL_FOLDER/out/.config" --state CONFIG_$cfg 2>/dev/null || echo "CONFIG_$cfg unknown"
         done
         echo "Packaging layered .ko files into AnyKernel3 zip (extra-modules/, manual insmod)..."
         MODDIR="$AK3_FOLDER/extra-modules"
         mkdir -p "$MODDIR"
-        for mod in mt7601u mac80211 cfg80211 btusb bluetooth rfkill btintel btbcm btrtl; do
+        for mod in mt7601u mac80211 cfg80211 btusb bluetooth rfkill btintel btbcm btrtl ecdh_generic aes_generic sha256_generic cmac crc16; do
           found=$(find "$COMMON_KERNEL_FOLDER/out" -name "${mod}.ko" 2>/dev/null | head -n 1)
           if [ -n "$found" ]; then
             cp "$found" "$MODDIR/"
