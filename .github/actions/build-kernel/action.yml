@@ -1919,6 +1919,11 @@ runs:
         EOF
         echo "Dongle defconfig lines present:"
         grep -E "^(CONFIG_WLAN|CONFIG_MT7601U|CONFIG_BT_HCIBTUSB)=" "$COMMON_KERNEL_FOLDER/arch/arm64/configs/gki_defconfig" | tail -n 6
+        echo "Applying Barrot quirk patches (0bda:8771)..."
+        patch -p1 --forward -d "$COMMON_KERNEL_FOLDER" < "$GITHUB_WORKSPACE/patches/barrot-btusb.patch" || true
+        patch -p1 --forward -d "$COMMON_KERNEL_FOLDER" < "$GITHUB_WORKSPACE/patches/barrot-usb-quirk.patch" || true
+        grep -q "0x0bda, 0x8771" "$COMMON_KERNEL_FOLDER/drivers/bluetooth/btusb.c" && echo "quirk present: btusb" || echo "::warning::barrot btusb quirk NOT applied"
+        grep -q "0x0bda, 0x8771" "$COMMON_KERNEL_FOLDER/drivers/usb/core/quirks.c" && echo "quirk present: usb-quirks" || echo "::warning::barrot usb quirk NOT applied"
         else
           echo "Skipping dongle drivers (not OP11r)."
         fi
