@@ -2332,7 +2332,7 @@ runs:
         # Only mt7601u needs a separate blob (88x2bu fw is compiled into the
         # driver; Barrot BT is firmware-less CSR or vendor-supplied).
         for f in mt7601u.bin; do
-          if curl -L --fail --retry 3 --retry-delay 5 --connect-timeout 30 -o "$FWDIR/$f" "https://raw.githubusercontent.com/wkennington/linux-firmware/main/$f"; then
+          if curl -L --fail --retry 3 --retry-delay 5 --connect-timeout 30 -o "$FWDIR/$f" "https://raw.githubusercontent.com/wkennington/linux-firmware/master/$f"; then
             echo "fw ok: $f"
           else
             echo "::warning::firmware fetch failed (non-fatal): $f"
