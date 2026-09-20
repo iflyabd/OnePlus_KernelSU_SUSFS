@@ -2322,8 +2322,23 @@ runs:
           "  insmod cfg80211.ko; insmod mac80211.ko; insmod mt7601u.ko" \
           "  insmod rfkill.ko; insmod bluetooth.ko; insmod btusb.ko" \
           "  insmod cfg80211.ko; insmod 88x2bu.ko" \
-          "Firmware (*.bin) is NOT included: push vendor firmware files first." \
+          "Firmware is in firmware/: mt7601u.bin goes to /vendor/firmware/ (root) first." \
+          "88x2bu firmware is compiled into 88x2bu.ko (no blob needed)." \
+          "Barrot BT needs no blob on CSR dongles, else vendor fw." \
           > "$MODDIR/README-install.txt"
+        echo "Fetching dongle firmware (linux-firmware mirror)..."
+        FWDIR="$MODDIR/firmware"
+        mkdir -p "$FWDIR"
+        # Only mt7601u needs a separate blob (88x2bu fw is compiled into the
+        # driver; Barrot BT is firmware-less CSR or vendor-supplied).
+        for f in mt7601u.bin; do
+          if curl -L --fail --retry 3 --retry-delay 5 --connect-timeout 30 -o "$FWDIR/$f" "https://raw.githubusercontent.com/wkennington/linux-firmware/main/$f"; then
+            echo "fw ok: $f"
+          else
+            echo "::warning::firmware fetch failed (non-fatal): $f"
+            rm -f "$FWDIR/$f"
+          fi
+        done
         echo "::endgroup::"
 
     - name: Create Kernel ZIP
