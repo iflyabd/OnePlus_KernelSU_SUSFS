@@ -1901,6 +1901,7 @@ runs:
         if [ "${OP_MODEL:-}" = "OP11r" ]; then
         echo "Layering in-tree USB dongle drivers: MT7601U WiFi + BT_USB (Barrot BT)"
         cat >> "$COMMON_KERNEL_FOLDER/arch/arm64/configs/gki_defconfig" <<EOF
+        CONFIG_WLAN=y
         CONFIG_MAC80211=m
         CONFIG_CFG80211=m
         CONFIG_MT7601U=m
