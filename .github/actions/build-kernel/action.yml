@@ -1911,6 +1911,11 @@ runs:
         CONFIG_BT_INTEL=m
         CONFIG_BT_BCM=m
         CONFIG_BT_RTL=m
+        CONFIG_CRYPTO_ECDH=m
+        CONFIG_CRYPTO_AES=m
+        CONFIG_CRYPTO_SHA256=m
+        CONFIG_CRYPTO_CMAC=m
+        CONFIG_CRC16=m
         EOF
         echo "Dongle defconfig lines present:"
         grep -E "^(CONFIG_WLAN|CONFIG_MT7601U|CONFIG_BT_HCIBTUSB)=" "$COMMON_KERNEL_FOLDER/arch/arm64/configs/gki_defconfig" | tail -n 6
