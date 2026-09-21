@@ -3,8 +3,8 @@
   "base": "wild/sm8475, manifest oneplus_11r_w.xml",
   "ksu": {
     "type": "ksun",
-    "hash": "234f6e040fcbca18b16d2398e1aa225712ec99ad",
-    "version": "33239"
+    "hash": "v3.4.0",
+    "note": "stable release (was dev 234f6e0/33239)"
   },
   "susfs": {
     "ref": "d4c3914bc2e4b538d562193a65e5a11a0289d6ea",
