@@ -2301,6 +2301,8 @@ runs:
         # proven unreliable through this step's shell layers; file content isn't.
         sed -i "s|^KSRC :=.*|KSRC := $COMMON_KERNEL_FOLDER/out|" Makefile
         grep -n "^KSRC :=" Makefile | head -n 3
+        # Clang12 predates -Wno-stringop-overread: drop it or every TU fails.
+        sed -i 's|^ccflags-y += -Wno-stringop-overread|#ccflags-y += -Wno-stringop-overread|' Makefile
         # Export as well: belt-and-suspenders so a dropped assignment fails loud.
         export ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- KVER="$KREL"
         echo "88x2bu build env: ARCH=$ARCH KVER=$KVER KSRC=$COMMON_KERNEL_FOLDER/out"
