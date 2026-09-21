@@ -2325,6 +2325,10 @@ runs:
         # plausible location so no rule is ever needed.
         mkdir -p scripts
         cp "$COMMON_KERNEL_FOLDER/out/scripts/module.lds" scripts/module.lds
+        # Also seed srctree copy: whichever cwd the link submakes run with,
+        # one of the three locations resolves without needing a build rule.
+        cp "$COMMON_KERNEL_FOLDER/out/scripts/module.lds" "$COMMON_KERNEL_FOLDER/scripts/module.lds" 2>/dev/null || true
+        ls -la "$COMMON_KERNEL_FOLDER/out/scripts/module.lds" scripts/module.lds
         # Clang12 prebuilt rejects newer -Wno-* flags morrownr adds; neutralize those.
         # Vendor code also trips Clang -Werror diagnostics: demote to warnings
         # for this out-of-tree module only (kernel itself keeps -Werror).
