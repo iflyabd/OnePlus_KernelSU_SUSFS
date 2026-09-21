@@ -2297,9 +2297,12 @@ runs:
         test -d rtl88x2bu
         KREL=$(cat "$COMMON_KERNEL_FOLDER/out/include/config/kernel.release")
         cd rtl88x2bu
-        # Ensure output tree has scripts/module.lds for external module link
-        # (release builds skip whatever generated it in test builds).
-        make -C "$COMMON_KERNEL_FOLDER" O="$COMMON_KERNEL_FOLDER/out" ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- LLVM=1 LLVM_IAS=1 scripts >/dev/null
+        # External module link needs $OUT/scripts/module.lds, which kbuild only
+        # creates on demand (in-tree module links do it implicitly). Build it
+        # explicitly: release builds otherwise fail with "No rule to make
+        # target 'scripts/module.lds'".
+        make -C "$COMMON_KERNEL_FOLDER" O="$COMMON_KERNEL_FOLDER/out" ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- LLVM=1 LLVM_IAS=1 -f scripts/Makefile.build obj=scripts scripts/module.lds
+        test -f "$COMMON_KERNEL_FOLDER/out/scripts/module.lds"
         # Clang12 prebuilt rejects newer -Wno-* flags morrownr adds; neutralize those.
         # Vendor code also trips Clang -Werror diagnostics: demote to warnings
         # for this out-of-tree module only (kernel itself keeps -Werror).
