@@ -1916,6 +1916,7 @@ runs:
         CONFIG_CRYPTO_SHA256=m
         CONFIG_CRYPTO_CMAC=m
         CONFIG_CRC16=m
+        CONFIG_RTL8822BU=m
         EOF
         echo "Dongle defconfig lines present:"
         grep -E "^(CONFIG_WLAN|CONFIG_MT7601U|CONFIG_BT_HCIBTUSB)=" "$COMMON_KERNEL_FOLDER/arch/arm64/configs/gki_defconfig" | tail -n 6
@@ -1924,6 +1925,22 @@ runs:
         patch -p1 --forward -d "$COMMON_KERNEL_FOLDER" < "$GITHUB_WORKSPACE/patches/barrot-usb-quirk.patch" || true
         grep -q "0x0bda, 0x8771" "$COMMON_KERNEL_FOLDER/drivers/bluetooth/btusb.c" && echo "quirk present: btusb" || echo "::warning::barrot btusb quirk NOT applied"
         grep -q "0x0bda, 0x8771" "$COMMON_KERNEL_FOLDER/drivers/usb/core/quirks.c" && echo "quirk present: usb-quirks" || echo "::warning::barrot usb quirk NOT applied"
+        echo "Vendoring RTL88x2BU driver into tree (in-tree kbuild)..."
+        rm -rf rtl88x2bu
+        for i in 1 2 3; do
+          git clone --depth 1 https://github.com/morrownr/88x2bu-20210702.git rtl88x2bu && break
+          echo "clone retry $i"; sleep 10
+        done
+        test -d rtl88x2bu
+        DW="$COMMON_KERNEL_FOLDER/drivers/net/wireless/rtl88x2bu"
+        rm -rf "$DW"
+        cp -r rtl88x2bu "$DW"
+        rm -rf "$DW/.git"
+        sed -i 's|^ccflags-y += -Wno-stringop-overread|#ccflags-y += -Wno-stringop-overread|' "$DW/Makefile"
+        printf '\nccflags-y += -Wno-error\n' >> "$DW/Makefile"
+        printf '%s\n' 'config RTL8822BU' '	tristate "Realtek RTL8812BU/RTL8822BU USB WiFi (morrownr, in-tree)"' '	depends on MAC80211 && USB' '	default m' > "$DW/Kconfig"
+        grep -q "wireless/rtl88x2bu" "$COMMON_KERNEL_FOLDER/drivers/net/wireless/Makefile" || echo 'obj-$(CONFIG_RTL8822BU) += rtl88x2bu/' >> "$COMMON_KERNEL_FOLDER/drivers/net/wireless/Makefile"
+        grep -q "wireless/rtl88x2bu/Kconfig" "$COMMON_KERNEL_FOLDER/drivers/net/wireless/Kconfig" || echo 'source "drivers/net/wireless/rtl88x2bu/Kconfig"' >> "$COMMON_KERNEL_FOLDER/drivers/net/wireless/Kconfig"
         else
           echo "Skipping dongle drivers (not OP11r)."
         fi
@@ -2278,71 +2295,19 @@ runs:
         echo "   - Build time: ${BUILD_TIME}s"
         echo "::endgroup::"
 
-    - name: Build RTL88x2BU module + package layered drivers (OP11r)
+    - name: Build layered driver modules + package (OP11r)
       shell: bash
       run: |
         set -euo pipefail
         if [ "${OP_MODEL:-}" != "OP11r" ]; then
-          echo "Skipping 88x2BU (not OP11r)."
+          echo "Skipping layered drivers (not OP11r)."
           exit 0
         fi
-        echo "::group::Build RTL8812BU/8822BU USB WiFi module (morrownr)"
+        echo "::group::Package layered drivers (OP11r)"
         export LLVM=1 LLVM_IAS=1 ARCH=arm64 SUBARCH=arm64
-        cd "$GITHUB_WORKSPACE"
-        rm -rf rtl88x2bu
-        for i in 1 2 3; do
-          git clone --depth 1 https://github.com/morrownr/88x2bu-20210702.git rtl88x2bu && break
-          echo "clone retry $i"; sleep 10
-        done
-        test -d rtl88x2bu
-        KREL=$(cat "$COMMON_KERNEL_FOLDER/out/include/config/kernel.release")
-        cd rtl88x2bu
-        # Hard-pin KSRC into the driver Makefile: command-line overrides have
-        # proven unreliable through this step's shell layers; file content isn't.
-        sed -i "s|^KSRC :=.*|KSRC := $COMMON_KERNEL_FOLDER/out|" Makefile
-        grep -n "^KSRC :=" Makefile | head -n 3
-        # Clang12 predates -Wno-stringop-overread: drop it or every TU fails.
-        sed -i 's|^ccflags-y += -Wno-stringop-overread|#ccflags-y += -Wno-stringop-overread|' Makefile
-        # Demote -Werror to warnings for this vendor tree (in-file: immune to
-        # variable-propagation quirks; kernel itself keeps -Werror).
-        printf '\nccflags-y += -Wno-error\n' >> Makefile
-        # Export as well: belt-and-suspenders so a dropped assignment fails loud.
-        export ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- KVER="$KREL"
-        echo "88x2bu build env: ARCH=$ARCH KVER=$KVER KSRC=$COMMON_KERNEL_FOLDER/out"
-        test -d "$COMMON_KERNEL_FOLDER/out" || { echo "::error::kernel OUT dir missing"; exit 1; }
-        # Release builds run `make Image` only (no modules target), so build
-        # in-tree modules here first: provides Module.symvers, .ko files and
-        # the scripts/module.lds prerequisite for the external module link.
+        # Release builds run `make Image` only (no modules target): build all
+        # in-tree modules here, including the vendored rtl88x2bu driver.
         make LD="$COMMON_KERNEL_FOLDER/ld-wrapper" HOSTLD="$COMMON_KERNEL_FOLDER/ld-wrapper" -j"$(nproc --all)" O="$COMMON_KERNEL_FOLDER/out" ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- LLVM=1 LLVM_IAS=1 modules
-        # External module link needs $OUT/scripts/module.lds, which kbuild only
-        # creates on demand (in-tree module links do it implicitly). Build it
-        # explicitly: release builds otherwise fail with "No rule to make
-        # target 'scripts/module.lds'".
-        make -C "$COMMON_KERNEL_FOLDER" O="$COMMON_KERNEL_FOLDER/out" ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- LLVM=1 LLVM_IAS=1 -f scripts/Makefile.build obj=scripts scripts/module.lds
-        test -f "$COMMON_KERNEL_FOLDER/out/scripts/module.lds"
-        # The external link resolves 'scripts/module.lds' relative to the
-        # invoking make's cwd, which isn't necessarily $OUT: seed every
-        # plausible location so no rule is ever needed.
-        mkdir -p scripts
-        cp "$COMMON_KERNEL_FOLDER/out/scripts/module.lds" scripts/module.lds
-        # Also seed srctree copy: whichever cwd the link submakes run with,
-        # one of the three locations resolves without needing a build rule.
-        cp "$COMMON_KERNEL_FOLDER/out/scripts/module.lds" "$COMMON_KERNEL_FOLDER/scripts/module.lds" 2>/dev/null || true
-        ls -la "$COMMON_KERNEL_FOLDER/out/scripts/module.lds" scripts/module.lds
-        # Clang12 prebuilt rejects newer -Wno-* flags morrownr adds; neutralize those.
-        # Vendor code also trips Clang -Werror diagnostics: demote to warnings
-        # for this out-of-tree module only (kernel itself keeps -Werror).
-        make -j"$(nproc)" ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- KVER="$KREL" KSRC="$COMMON_KERNEL_FOLDER/out" EXTRA_CFLAGS="-Wno-unknown-warning-option -Wno-sometimes-uninitialized -Wno-parentheses-equality -Wno-error"
-        KO=$(find . -name "88x2bu.ko" | head -n 1)
-        test -n "$KO"
-        echo "Built: $KO"
-        if [ -f "$COMMON_KERNEL_FOLDER/out/certs/signing_key.pem" ]; then
-          "$COMMON_KERNEL_FOLDER/out/scripts/sign-file" sha512 \
-            "$COMMON_KERNEL_FOLDER/out/certs/signing_key.pem" \
-            "$COMMON_KERNEL_FOLDER/out/certs/signing_key.x509" "$KO" || true
-        fi
-        mkdir -p "$ARTIFACTS_FOLDER"
-        cp "$KO" "$ARTIFACTS_FOLDER/88x2bu.ko"
         echo "Resolved dongle configs in built .config:"
         for cfg in MT7601U WLAN WLAN_VENDOR_MEDIATEK BT_HCIBTUSB BT_INTEL BT_BCM BT_RTL BT MAC80211 CFG80211 USB RFKILL CRYPTO_ECDH CRYPTO_CMAC; do
           "$COMMON_KERNEL_FOLDER/scripts/config" --file "$COMMON_KERNEL_FOLDER/out/.config" --state CONFIG_$cfg 2>/dev/null || echo "CONFIG_$cfg unknown"
@@ -2350,7 +2315,7 @@ runs:
         echo "Packaging layered .ko files into AnyKernel3 zip (extra-modules/, manual insmod)..."
         MODDIR="$AK3_FOLDER/extra-modules"
         mkdir -p "$MODDIR"
-        for mod in mt7601u mac80211 cfg80211 btusb bluetooth rfkill btintel btbcm btrtl ecdh_generic aes_generic sha256_generic cmac crc16; do
+        for mod in mt7601u mac80211 cfg80211 btusb bluetooth rfkill btintel btbcm btrtl ecdh_generic aes_generic sha256_generic cmac crc16 88x2bu; do
           found=$(find "$COMMON_KERNEL_FOLDER/out" -name "${mod}.ko" 2>/dev/null | head -n 1)
           if [ -n "$found" ]; then
             cp "$found" "$MODDIR/"
@@ -2359,7 +2324,8 @@ runs:
             echo "not built as module (builtin or absent): $mod"
           fi
         done
-        cp "$KO" "$MODDIR/88x2bu.ko"
+        mkdir -p "$ARTIFACTS_FOLDER"
+        for k in "$MODDIR"/*.ko; do cp "$k" "$ARTIFACTS_FOLDER/" 2>/dev/null || true; done
         if [ -f "$COMMON_KERNEL_FOLDER/out/certs/signing_key.pem" ]; then
           for k in "$MODDIR"/*.ko; do
             "$COMMON_KERNEL_FOLDER/out/scripts/sign-file" sha512 \
