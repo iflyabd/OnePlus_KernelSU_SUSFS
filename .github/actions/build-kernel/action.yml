@@ -2297,6 +2297,9 @@ runs:
         test -d rtl88x2bu
         KREL=$(cat "$COMMON_KERNEL_FOLDER/out/include/config/kernel.release")
         cd rtl88x2bu
+        # Ensure output tree has scripts/module.lds for external module link
+        # (release builds skip whatever generated it in test builds).
+        make -C "$COMMON_KERNEL_FOLDER" O="$COMMON_KERNEL_FOLDER/out" ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- LLVM=1 LLVM_IAS=1 scripts >/dev/null
         # Clang12 prebuilt rejects newer -Wno-* flags morrownr adds; neutralize those.
         # Vendor code also trips Clang -Werror diagnostics: demote to warnings
         # for this out-of-tree module only (kernel itself keeps -Werror).
