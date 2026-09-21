@@ -2320,6 +2320,11 @@ runs:
         # target 'scripts/module.lds'".
         make -C "$COMMON_KERNEL_FOLDER" O="$COMMON_KERNEL_FOLDER/out" ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- LLVM=1 LLVM_IAS=1 -f scripts/Makefile.build obj=scripts scripts/module.lds
         test -f "$COMMON_KERNEL_FOLDER/out/scripts/module.lds"
+        # The external link resolves 'scripts/module.lds' relative to the
+        # invoking make's cwd, which isn't necessarily $OUT: seed every
+        # plausible location so no rule is ever needed.
+        mkdir -p scripts
+        cp "$COMMON_KERNEL_FOLDER/out/scripts/module.lds" scripts/module.lds
         # Clang12 prebuilt rejects newer -Wno-* flags morrownr adds; neutralize those.
         # Vendor code also trips Clang -Werror diagnostics: demote to warnings
         # for this out-of-tree module only (kernel itself keeps -Werror).
