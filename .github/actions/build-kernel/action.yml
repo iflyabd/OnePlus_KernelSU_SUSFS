@@ -1938,6 +1938,11 @@ runs:
         rm -rf "$DW/.git"
         sed -i 's|^ccflags-y += -Wno-stringop-overread|#ccflags-y += -Wno-stringop-overread|' "$DW/Makefile"
         printf '\nccflags-y += -Wno-error\n' >> "$DW/Makefile"
+        # In-tree kbuild reads this Makefile with cwd=srctree, which breaks
+        # TopDIR-relative includes/autoconf handling: pin TopDIR to the driver
+        # dir and add a parent -I so drv_types.h etc. always resolve.
+        sed -i 's|^export TopDIR ?=.*|export TopDIR := $(srctree)/drivers/net/wireless/rtl88x2bu|' "$DW/Makefile"
+        printf '%s\n' 'ccflags-y += -I$(src)/..' >> "$DW/Makefile"
         printf '%s\n' 'config RTL8822BU' '	tristate "Realtek RTL8812BU/RTL8822BU USB WiFi (morrownr, in-tree)"' '	depends on MAC80211 && USB' '	default m' > "$DW/Kconfig"
         grep -q "wireless/rtl88x2bu" "$COMMON_KERNEL_FOLDER/drivers/net/wireless/Makefile" || echo 'obj-$(CONFIG_RTL8822BU) += rtl88x2bu/' >> "$COMMON_KERNEL_FOLDER/drivers/net/wireless/Makefile"
         grep -q "wireless/rtl88x2bu/Kconfig" "$COMMON_KERNEL_FOLDER/drivers/net/wireless/Kconfig" || echo 'source "drivers/net/wireless/rtl88x2bu/Kconfig"' >> "$COMMON_KERNEL_FOLDER/drivers/net/wireless/Kconfig"
