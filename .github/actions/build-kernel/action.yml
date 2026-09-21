@@ -2297,6 +2297,10 @@ runs:
         test -d rtl88x2bu
         KREL=$(cat "$COMMON_KERNEL_FOLDER/out/include/config/kernel.release")
         cd rtl88x2bu
+        # Hard-pin KSRC into the driver Makefile: command-line overrides have
+        # proven unreliable through this step's shell layers; file content isn't.
+        sed -i "s|^KSRC :=.*|KSRC := $COMMON_KERNEL_FOLDER/out|" Makefile
+        grep -n "^KSRC :=" Makefile | head -n 3
         # Export as well: belt-and-suspenders so a dropped assignment fails loud.
         export ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- KVER="$KREL"
         echo "88x2bu build env: ARCH=$ARCH KVER=$KVER KSRC=$COMMON_KERNEL_FOLDER/out"
