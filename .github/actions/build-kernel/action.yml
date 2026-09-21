@@ -2307,6 +2307,7 @@ runs:
         export LLVM=1 LLVM_IAS=1 ARCH=arm64 SUBARCH=arm64
         # Release builds run `make Image` only (no modules target): build all
         # in-tree modules here, including the vendored rtl88x2bu driver.
+        cd "$COMMON_KERNEL_FOLDER"
         make LD="$COMMON_KERNEL_FOLDER/ld-wrapper" HOSTLD="$COMMON_KERNEL_FOLDER/ld-wrapper" -j"$(nproc --all)" O="$COMMON_KERNEL_FOLDER/out" ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- LLVM=1 LLVM_IAS=1 modules
         echo "Resolved dongle configs in built .config:"
         for cfg in MT7601U WLAN WLAN_VENDOR_MEDIATEK BT_HCIBTUSB BT_INTEL BT_BCM BT_RTL BT MAC80211 CFG80211 USB RFKILL CRYPTO_ECDH CRYPTO_CMAC; do
