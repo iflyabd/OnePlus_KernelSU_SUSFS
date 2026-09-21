@@ -2297,6 +2297,10 @@ runs:
         test -d rtl88x2bu
         KREL=$(cat "$COMMON_KERNEL_FOLDER/out/include/config/kernel.release")
         cd rtl88x2bu
+        # Export as well: belt-and-suspenders so a dropped assignment fails loud.
+        export ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- KVER="$KREL"
+        echo "88x2bu build env: ARCH=$ARCH KVER=$KVER KSRC=$COMMON_KERNEL_FOLDER/out"
+        test -d "$COMMON_KERNEL_FOLDER/out" || { echo "::error::kernel OUT dir missing"; exit 1; }
         # Release builds run `make Image` only (no modules target), so build
         # in-tree modules here first: provides Module.symvers, .ko files and
         # the scripts/module.lds prerequisite for the external module link.
