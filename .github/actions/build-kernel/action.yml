@@ -1919,7 +1919,13 @@ runs:
         CONFIG_CRYPTO_CMAC=m
         CONFIG_CRC16=m
         CONFIG_RTL8822BU=m
+        CONFIG_EXTRA_FIRMWARE="mt7601u.bin"
+        CONFIG_EXTRA_FIRMWARE_DIR="firmware"
         EOF
+        echo "Embedding mt7601u.bin into kernel (EXTRA_FIRMWARE)..."
+        mkdir -p "$COMMON_KERNEL_FOLDER/firmware"
+        curl -L --fail --retry 3 --retry-delay 5 --connect-timeout 30 -o "$COMMON_KERNEL_FOLDER/firmware/mt7601u.bin" "https://raw.githubusercontent.com/wkennington/linux-firmware/master/mt7601u.bin"
+        ls -la "$COMMON_KERNEL_FOLDER/firmware/mt7601u.bin"
         echo "Dongle defconfig lines present:"
         grep -E "^(CONFIG_WLAN|CONFIG_MT7601U|CONFIG_BT_HCIBTUSB)=" "$COMMON_KERNEL_FOLDER/arch/arm64/configs/gki_defconfig" | tail -n 6
         echo "Applying Barrot quirk patches (0bda:8771)..."
