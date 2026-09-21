@@ -1926,12 +1926,14 @@ runs:
         grep -q "0x0bda, 0x8771" "$COMMON_KERNEL_FOLDER/drivers/bluetooth/btusb.c" && echo "quirk present: btusb" || echo "::warning::barrot btusb quirk NOT applied"
         grep -q "0x0bda, 0x8771" "$COMMON_KERNEL_FOLDER/drivers/usb/core/quirks.c" && echo "quirk present: usb-quirks" || echo "::warning::barrot usb quirk NOT applied"
         echo "Vendoring RTL88x2BU driver into tree (in-tree kbuild)..."
+        RTL88_SHA=d31ffa827bb95b8a436c2a469b5163b634ac4333
         rm -rf rtl88x2bu
         for i in 1 2 3; do
           git clone --depth 1 https://github.com/morrownr/88x2bu-20210702.git rtl88x2bu && break
           echo "clone retry $i"; sleep 10
         done
         test -d rtl88x2bu
+        git -C rtl88x2bu fetch --depth 1 origin "$RTL88_SHA" && git -C rtl88x2bu checkout "$RTL88_SHA"
         DW="$COMMON_KERNEL_FOLDER/drivers/net/wireless/rtl88x2bu"
         rm -rf "$DW"
         cp -r rtl88x2bu "$DW"

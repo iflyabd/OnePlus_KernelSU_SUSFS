@@ -16,6 +16,30 @@
     "branch": "aug11",
     "sha": "f569cc9e69d6f03a488c391db4cc00db8ead7a59"
   },
-  "drivers": "stock OP11r.json row: ds/opt/bbg/bbr/bbr3/ttl/ip_set/unicode/ntsync true, default blacklist_modules, lto thin, uname OP-WILD",
+  "drivers": {
+    "rtl88x2bu": {
+      "repo": "morrownr/88x2bu-20210702",
+      "sha": "d31ffa827bb95b8a436c2a469b5163b634ac4333",
+      "mode": "in-tree vendored"
+    },
+    "in_tree": [
+      "MT7601U",
+      "BT_HCIBTUSB",
+      "BT_INTEL",
+      "BT_BCM",
+      "BT_RTL",
+      "MAC80211",
+      "CFG80211",
+      "BT",
+      "CRYPTO_ECDH",
+      "CRYPTO_CMAC"
+    ],
+    "firmware": [
+      "mt7601u.bin",
+      "intel/ibt-18/20 pairs",
+      "rtl_bt/rtl8822b pair"
+    ],
+    "quirk": "Barrot 0bda:8771 (btusb WBS + usb reset-resume)"
+  },
   "proven_green_run": "to be filled by release rebuild"
 }
