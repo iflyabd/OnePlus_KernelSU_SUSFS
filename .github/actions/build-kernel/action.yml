@@ -2297,6 +2297,10 @@ runs:
         test -d rtl88x2bu
         KREL=$(cat "$COMMON_KERNEL_FOLDER/out/include/config/kernel.release")
         cd rtl88x2bu
+        # Release builds run `make Image` only (no modules target), so build
+        # in-tree modules here first: provides Module.symvers, .ko files and
+        # the scripts/module.lds prerequisite for the external module link.
+        make LD="$COMMON_KERNEL_FOLDER/ld-wrapper" HOSTLD="$COMMON_KERNEL_FOLDER/ld-wrapper" -j"$(nproc --all)" O="$COMMON_KERNEL_FOLDER/out" ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- LLVM=1 LLVM_IAS=1 modules
         # External module link needs $OUT/scripts/module.lds, which kbuild only
         # creates on demand (in-tree module links do it implicitly). Build it
         # explicitly: release builds otherwise fail with "No rule to make
