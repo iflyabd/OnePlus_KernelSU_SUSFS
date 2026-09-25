@@ -13,8 +13,9 @@
   "clang": "WeebX-Clang-19.1.5 via zyc_compiler (fork toolchain-cache release)",
   "kernel_patches": {
     "repo": "iflyabd/kernel_patches",
-    "branch": "aug11",
-    "sha": "f569cc9e69d6f03a488c391db4cc00db8ead7a59"
+    "branch": "june21",
+    "sha": "35fac8ee31035fb73a8b9301b50c2bdb4ff7feb7",
+    "note": "June-21 fixes match KSUN June22 + susfs v2.2.0"
   },
   "drivers": {
     "rtl88x2bu": {
