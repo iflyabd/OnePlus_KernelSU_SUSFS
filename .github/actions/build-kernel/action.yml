@@ -859,7 +859,7 @@ runs:
           return 1
         }
         
-        retry_clone "https://github.com/iflyabd/kernel_patches.git" "june21" "1"
+        retry_clone "https://github.com/iflyabd/kernel_patches.git" "op11r-pinned" "1"
         
         if [ "${{ env.OP_SUSFS }}" = true ]; then
           echo "Using SUSFS branch/commit: $SUSFS_BRANCH"
