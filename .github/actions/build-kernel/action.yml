@@ -1100,11 +1100,6 @@ runs:
             if [ "${{ inputs.ksu_type }}" = "KSUN" ]; then
               cd "$KSUN_FOLDER"
               patch -p1 --forward < "$SUSFS_FOLDER/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch" || true
-              # sucompat frankencode (10_enable partial + fix) hangs early boot
-              # on KSUN 33239: keep pristine sucompat (stock execve path boots),
-              # drop its rejects so the fix loop below skips it.
-              git checkout -- kernel/feature/sucompat.c kernel/feature/sucompat.h 2>/dev/null || echo "::warning::sucompat revert skipped (not a git checkout?)"
-              rm -f kernel/feature/sucompat.c.rej kernel/feature/sucompat.h.rej
               for file in $(find ./kernel -maxdepth 2 -name "*.rej" -exec basename {} .rej \;); do
                 echo "Patching file: $file with fix_$file.patch"
                 patch -p1 --forward < "$KERNEL_PATCHES_FOLDER/next/susfs_fix_patches/$susfs_version/fix_$file.patch" || true
