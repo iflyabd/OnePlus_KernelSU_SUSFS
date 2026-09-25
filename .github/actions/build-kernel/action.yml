@@ -1100,6 +1100,11 @@ runs:
             if [ "${{ inputs.ksu_type }}" = "KSUN" ]; then
               cd "$KSUN_FOLDER"
               patch -p1 --forward < "$SUSFS_FOLDER/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch" || true
+              # sucompat frankencode (10_enable partial + fix) hangs early boot
+              # on KSUN 33239: keep pristine sucompat (stock execve path boots),
+              # drop its rejects so the fix loop below skips it.
+              git checkout -- kernel/feature/sucompat.c kernel/feature/sucompat.h 2>/dev/null || echo "::warning::sucompat revert skipped (not a git checkout?)"
+              rm -f kernel/feature/sucompat.c.rej kernel/feature/sucompat.h.rej
               for file in $(find ./kernel -maxdepth 2 -name "*.rej" -exec basename {} .rej \;); do
                 echo "Patching file: $file with fix_$file.patch"
                 patch -p1 --forward < "$KERNEL_PATCHES_FOLDER/next/susfs_fix_patches/$susfs_version/fix_$file.patch" || true
@@ -1108,10 +1113,6 @@ runs:
               patch -p1 --forward < "$KERNEL_PATCHES_FOLDER/next/susfs_fix_patches/$susfs_version/overwrite_hook_mode.patch" || true
               echo "Patching KSU_TOOLKIT Support for SusFS kernel!"
               patch -p1 --forward < "$KERNEL_PATCHES_FOLDER/next/susfs_fix_patches/$susfs_version/ksu_toolkit.patch" || true
-              echo "Providing is_first_zygote definition (fork: v2.2.0 provides none for fix_sucompat)!"
-              if ! grep -q "DEFINE_STATIC_KEY_TRUE(is_first_zygote)" kernel/feature/sucompat.c; then
-                printf '\n/* NoWiFi fork: v2.2.0 provides no definition for the is_first_zygote key used by fix_sucompat. */\nDEFINE_STATIC_KEY_TRUE(is_first_zygote);\n' >> kernel/feature/sucompat.c
-              fi
             else
               cd "$KSU_FOLDER"
               patch -p1 --forward < "$SUSFS_FOLDER/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch" || true
